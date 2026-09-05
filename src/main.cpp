@@ -1,54 +1,82 @@
 #include <Arduino.h>
 
-const int hallPin = 2;
+// Segments of the digits
+int ASeg = 9;
+int BSeg = 13;
+int CSeg = 4;
+int DSeg = 6;
+int ESeg = 7;
+int FSeg = 8;
+int GSeg = 3;
 
-// The wheel's circumference is 0.78m and there are 15 pulses per revolution
-const float distancePerPulse = 0.78 / 15.0;
+// Decimal points
+int DPSeg = 5;
 
-volatile unsigned long lastPulse = 0; // Time of the previous sensor pulse
-volatile unsigned long pulseTime = 0; // Time between the last two pulses
+// Digits
+int a1 = 10;
+int a2 = 11;
+int a3 = 12;
+int a4 = 2;
 
-void pulse() {
-  unsigned long now = micros(); // Get current time in microseconds
+int segments[] = {
+  ASeg, BSeg, CSeg, DSeg,
+  ESeg, FSeg, GSeg, DPSeg
+};
 
-  if (now - lastPulse < 2000) {
-    return; // Ignore pulses that are too close together
-  }
-
-  pulseTime = now - lastPulse; // Calculate time since previous pulse
-  lastPulse = now; // Save time of this pulse
-}
+int digits[] = {
+  a1, a2, a3, a4
+};
 
 void setup() {
-  Serial.begin(115200);
-
-  pinMode(hallPin, INPUT_PULLUP); // Set Hall sensor pin as an input
-
-  // Run pulse() whenever the Hall sensor changes from HIGH to LOW
-  attachInterrupt(digitalPinToInterrupt(hallPin), pulse, FALLING);
-}
-
-void loop() {
-  unsigned long timeSincePulse;
-  unsigned long interval;
-
-  // Temporarily stop interrupts while copying these values
-  noInterrupts();
-
-  timeSincePulse = micros() - lastPulse;
-  interval = pulseTime;
-
-  interrupts();
-
-  float speed = 0;
-
-  // If a pulse has been received recently, calculate speed in mph
-  if (interval > 0 && timeSincePulse < 1000000) {
-    // Calculates m/s and then converts to mph
-    speed = (distancePerPulse / (interval / 1000000.0)) * 2.23694;
+  for (int i = 0; i < 8; i++) {
+    pinMode(segments[i], OUTPUT);
+    digitalWrite(segments[i], HIGH); // Segments OFF
   }
 
-  Serial.println(speed, 1); // Print speed to 1 d.p.
+  for (int i = 0; i < 4; i++) {
+    pinMode(digits[i], OUTPUT);
+    digitalWrite(digits[i], LOW); // Digits OFF
+  }
+}
 
-  delay(100); // Update speed every 100 ms
+// Go through each segment in each digit, one by one
+void loop() {
+  for (int d = 0; d < 4; d++) {
+
+    digitalWrite(digits[d], HIGH); // Turn this digit ON
+
+    digitalWrite(ASeg, LOW);
+    delay(100);
+    digitalWrite(ASeg, HIGH);
+
+    digitalWrite(BSeg, LOW);
+    delay(100);
+    digitalWrite(BSeg, HIGH);
+
+    digitalWrite(CSeg, LOW);
+    delay(100);
+    digitalWrite(CSeg, HIGH);
+
+    digitalWrite(DSeg, LOW);
+    delay(100);
+    digitalWrite(DSeg, HIGH);
+
+    digitalWrite(ESeg, LOW);
+    delay(100);
+    digitalWrite(ESeg, HIGH);
+
+    digitalWrite(FSeg, LOW);
+    delay(100);
+    digitalWrite(FSeg, HIGH);
+
+    digitalWrite(GSeg, LOW);
+    delay(100);
+    digitalWrite(GSeg, HIGH);
+
+    digitalWrite(DPSeg, LOW);
+    delay(100);
+    digitalWrite(DPSeg, HIGH);
+
+    digitalWrite(digits[d], LOW); // Turn digit OFF
+  }
 }
