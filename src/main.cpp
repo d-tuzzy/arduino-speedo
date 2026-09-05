@@ -1,82 +1,52 @@
 #include <Arduino.h>
 
-// Segments of the digits
-int ASeg = 9;
-int BSeg = 13;
-int CSeg = 4;
-int DSeg = 6;
-int ESeg = 7;
-int FSeg = 8;
-int GSeg = 3;
+const int SER  = 7;
+const int SHCP = 3;
+const int STCP = 4;
 
-// Decimal points
-int DPSeg = 5;
+const int digit3 = 6;
+const int digit4 = 5;
 
-// Digits
-int a1 = 10;
-int a2 = 11;
-int a3 = 12;
-int a4 = 2;
-
-int segments[] = {
-  ASeg, BSeg, CSeg, DSeg,
-  ESeg, FSeg, GSeg, DPSeg
-};
-
-int digits[] = {
-  a1, a2, a3, a4
-};
-
-void setup() {
-  for (int i = 0; i < 8; i++) {
-    pinMode(segments[i], OUTPUT);
-    digitalWrite(segments[i], HIGH); // Segments OFF
-  }
-
-  for (int i = 0; i < 4; i++) {
-    pinMode(digits[i], OUTPUT);
-    digitalWrite(digits[i], LOW); // Digits OFF
-  }
+void show(byte value) {
+  digitalWrite(STCP, LOW);
+  shiftOut(SER, SHCP, LSBFIRST, value);
+  digitalWrite(STCP, HIGH);
 }
 
-// Go through each segment in each digit, one by one
+void setup() {
+  pinMode(SER, OUTPUT);
+  pinMode(SHCP, OUTPUT);
+  pinMode(STCP, OUTPUT);
+
+  pinMode(digit3, OUTPUT);
+  pinMode(digit4, OUTPUT);
+
+  digitalWrite(digit3, HIGH);
+  digitalWrite(digit4, HIGH);
+}
+
 void loop() {
-  for (int d = 0; d < 4; d++) {
+  show(191);  // A
+  delay(1000);
 
-    digitalWrite(digits[d], HIGH); // Turn this digit ON
+  show(223);  // B
+  delay(1000);
 
-    digitalWrite(ASeg, LOW);
-    delay(100);
-    digitalWrite(ASeg, HIGH);
+  show(239);  // C
+  delay(1000);
 
-    digitalWrite(BSeg, LOW);
-    delay(100);
-    digitalWrite(BSeg, HIGH);
+  show(247);  // D
+  delay(1000);
 
-    digitalWrite(CSeg, LOW);
-    delay(100);
-    digitalWrite(CSeg, HIGH);
+  show(251);  // E
+  delay(1000);
 
-    digitalWrite(DSeg, LOW);
-    delay(100);
-    digitalWrite(DSeg, HIGH);
+  show(253);  // F
+  delay(1000);
 
-    digitalWrite(ESeg, LOW);
-    delay(100);
-    digitalWrite(ESeg, HIGH);
+  show(254);  // G
+  delay(1000);
 
-    digitalWrite(FSeg, LOW);
-    delay(100);
-    digitalWrite(FSeg, HIGH);
-
-    digitalWrite(GSeg, LOW);
-    delay(100);
-    digitalWrite(GSeg, HIGH);
-
-    digitalWrite(DPSeg, LOW);
-    delay(100);
-    digitalWrite(DPSeg, HIGH);
-
-    digitalWrite(digits[d], LOW); // Turn digit OFF
-  }
+  show(127);  // DP
+  delay(1000);
 }
