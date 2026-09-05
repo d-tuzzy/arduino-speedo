@@ -1,12 +1,23 @@
 #include <Arduino.h>
 
-const int SER  = 7; // Serial data input
-const int SHCP = 3; // Shift register clock
-const int STCP = 4; // Latch clock
+// 74HC595 control pins
+const int SER  = 7;  // Serial data input
+const int SHCP = 3;  // Shift register clock
+const int STCP = 4;  // Latch clock
 
 // Digit wiring
 const int digitA3 = 5;
 const int digitA4 = 6;
+
+// Hall sensor
+const int hallPin = 2;
+
+// Wheel circumference / 15 pulses per revolution
+const float distancePerPulse = 0.78 / 15.0;
+
+// Hall sensor timing
+volatile unsigned long lastPulse = 0;
+volatile unsigned long pulseTime = 0;
 
 // Segment mapping
 const byte segA = 191;
@@ -41,43 +52,97 @@ void send(byte value) {
   digitalWrite(STCP, HIGH);
 }
 
-void showBoth(int n) {
-  byte pattern = number(n);
+// Show a number on A3 and A4
+void showNumber(int value) {
+  // Keep the speed between 0 and 99
+  if (value > 99) value = 99;
+  if (value < 0) value = 0;
 
-  // Digit A3
-  digitalWrite(digitA4, HIGH); // Digit off
-  send(pattern);
-  digitalWrite(digitA3, LOW); // Digit on
-  delay(5);
+  // If the number is only one digit, use A4 only
+  if (value < 10) {
+    digitalWrite(digitA3, HIGH); // A3 off
+    send(number(value));
+    digitalWrite(digitA4, LOW);  // A4 on
+    delay(5);
+  }
+  
+  else {
+    // Separate the number into tens and ones
+    int tens = value / 10;
+    int ones = value % 10;
 
-  // Digit A4
-  digitalWrite(digitA3, HIGH); // Digit off
-  send(pattern);
-  digitalWrite(digitA4, LOW); // Digit on
-  delay(5);
+    // Digit A3
+    digitalWrite(digitA4, HIGH);
+    send(number(tens));
+    digitalWrite(digitA3, LOW);
+    delay(5);
+
+    // Digit A4
+    digitalWrite(digitA3, HIGH);
+    send(number(ones));
+    digitalWrite(digitA4, LOW);
+    delay(5);
+  }
+}
+
+void pulse() {
+  unsigned long now = micros(); // Get current time in microseconds
+
+  if (now - lastPulse < 2000) {
+    return; // Ignore pulses that are too close together
+  }
+
+  pulseTime = now - lastPulse; // Calculate time since previous pulse
+  lastPulse = now; // Save time of this pulse
 }
 
 void setup() {
+  // 74HC595 pins
   pinMode(SER, OUTPUT);
   pinMode(SHCP, OUTPUT);
   pinMode(STCP, OUTPUT);
 
+  // Display digit pins
   pinMode(digitA3, OUTPUT);
   pinMode(digitA4, OUTPUT);
 
   // Turn both digits off initially
   digitalWrite(digitA3, HIGH);
   digitalWrite(digitA4, HIGH);
+
+  // Hall sensor
+  pinMode(hallPin, INPUT_PULLUP);
+
+  // Run pulse() whenever the Hall sensor changes from HIGH to LOW
+  attachInterrupt(digitalPinToInterrupt(hallPin), pulse, FALLING);
 }
 
 void loop() {
-  for (int i = 0; i <= 9; i++) {
+  unsigned long timeSincePulse;
+  unsigned long interval;
 
-    unsigned long start = millis(); // Remember the start time
+  noInterrupts(); // Temporarily stop interrupts while copying these values
+  timeSincePulse = micros() - lastPulse;
+  interval = pulseTime;
+  interrupts();
 
-    // Keep refreshing the two digits for 1 second
-    while (millis() - start < 1000) {
-      showBoth(i);
-    }
+  float speed = 0;
+
+  // If a pulse has been received recently
+  if (interval > 0 && timeSincePulse < 1000000) {
+    // Calculate m/s and then converts to mph
+    speed = (distancePerPulse / (interval / 1000000.0)) * 2.23694;
+  }
+
+  int speedDisplay = (int)(speed + 0.5); // Round speed to the nearest whole number
+
+  Serial.println(speedDisplay); // Print speed to Serial monitor
+
+  // Keep refreshing the display
+  unsigned long start = millis();
+
+  // Keep refreshing the two digits for 100ms
+  while (millis() - start < 100) {
+    showNumber(speedDisplay);
   }
 }
