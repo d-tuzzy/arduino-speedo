@@ -148,11 +148,8 @@ void setup() {
 void loop() {
   int throttleValue = analogRead(throttlePin);
 
-  // Start showing LEDs only when throttle > minimum + 5
-  int throttleStart = throttleMin + 5;
-
   // Convert throttle reading to a percentage
-  int throttlePercent = map(throttleValue, throttleStart, throttleMax, 0, 100);
+  int throttlePercent = map(throttleValue, throttleMin, throttleMax, 0, 100);
 
   // Keep percentage between 0 and 100
   throttlePercent = constrain(throttlePercent, 0, 100);
