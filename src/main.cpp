@@ -12,6 +12,19 @@ const int digitA4 = 6;
 // Hall sensor
 const int hallPin = 2;
 
+// Throttle input
+const int throttlePin = A0;
+
+// Throttle values
+const int throttleMin = 173;
+const int throttleMax = 766;
+
+// Throttle LEDs
+const int greenLED1 = 12;
+const int greenLED2 = 11;
+const int yellowLED = 10;
+const int redLED = 9;
+
 // Wheel circumference / 15 pulses per revolution
 const float distancePerPulse = 0.78 / 15.0;
 
@@ -113,11 +126,60 @@ void setup() {
   // Hall sensor
   pinMode(hallPin, INPUT_PULLUP);
 
+  // Throttle input
+  pinMode(throttlePin, INPUT);
+
+  // Throttle LEDs
+  pinMode(greenLED1, OUTPUT);
+  pinMode(greenLED2, OUTPUT);
+  pinMode(yellowLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+
+  // Turn all LEDs off initially
+  digitalWrite(greenLED1, LOW);
+  digitalWrite(greenLED2, LOW);
+  digitalWrite(yellowLED, LOW);
+  digitalWrite(redLED, LOW);
+
   // Run pulse() whenever the Hall sensor changes from HIGH to LOW
   attachInterrupt(digitalPinToInterrupt(hallPin), pulse, FALLING);
 }
 
 void loop() {
+  int throttleValue = analogRead(throttlePin);
+
+  // Start showing LEDs only when throttle > minimum + 5
+  int throttleStart = throttleMin + 5;
+
+  // Convert throttle reading to a percentage
+  int throttlePercent = map(throttleValue, throttleStart, throttleMax, 0, 100);
+
+  // Keep percentage between 0 and 100
+  throttlePercent = constrain(throttlePercent, 0, 100);
+
+  // Turn all throttle LEDs off first
+  digitalWrite(greenLED1, LOW);
+  digitalWrite(greenLED2, LOW);
+  digitalWrite(yellowLED, LOW);
+  digitalWrite(redLED, LOW);
+
+  // Progressive LED display
+  if (throttlePercent >= 25) {
+    digitalWrite(greenLED1, HIGH);
+  }
+
+  if (throttlePercent >= 50) {
+    digitalWrite(greenLED2, HIGH);
+  }
+
+  if (throttlePercent >= 75) {
+    digitalWrite(yellowLED, HIGH);
+  }
+
+  if (throttlePercent >= 100) {
+    digitalWrite(redLED, HIGH);
+  }
+
   unsigned long timeSincePulse;
   unsigned long interval;
 
@@ -135,8 +197,6 @@ void loop() {
   }
 
   int speedDisplay = (int)(speed + 0.5); // Round speed to the nearest whole number
-
-  Serial.println(speedDisplay); // Print speed to Serial monitor
 
   // Keep refreshing the display
   unsigned long start = millis();
